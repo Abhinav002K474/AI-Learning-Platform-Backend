@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Learning Platform</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Three.js + Vanta -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #0b0b12;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #b794f4;
+        }
+
+        .nav-actions a {
+            margin-left: 20px;
+            padding: 10px 22px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .login {
+            color: #fff;
+            border: 1px solid #b794f4;
+        }
+
+        .signup {
+            background: #b794f4;
+            color: #0b0b12;
+        }
+
+        .nav-actions a:hover {
+            opacity: 0.85;
+        }
+
+        /* HERO */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 700px;
+            padding: 20px;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* SECTIONS */
+        .section {
+            padding: 100px 80px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #b794f4;
+        }
+
+        .section p {
+            font-size: 17px;
+            line-height: 1.7;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        /* FOOTER */
+        footer {
+            padding: 60px 40px;
+            background: #07070d;
+            text-align: center;
+        }
+
+        footer p {
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        /* NEW STYLES */
+        .logo-sub {
+            font-size: 12px;
+            font-weight: 400;
+            color: #b794f4;
+            /* Match logo color or slightly dimmer */
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .detail-card {
+            text-align: left;
+        }
+
+        .contact-info p {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <!-- NAV -->
+    <div class="navbar">
+        <div class="logo-container">
+            <div class="logo">Day One AI Learning Platform</div>
+            <div class="logo-sub">Smarter Learning. Structured Growth. Real Results.</div>
+        </div>
+        <div class="nav-actions">
+            <a href="/login.html" class="login">Login</a>
+            <a href="/signup.html" class="signup">Sign Up</a>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero" id="vanta-bg">
+        <div class="hero-content">
+            <h1 class="hero-title">AI-Powered Learning Built for Real Classrooms</h1>
+            <p class="hero-subtitle">
+                A curriculum-aligned education platform designed to support students, teachers, and parents with
+                structured assessments, progress tracking, and safe AI assistance.
+            </p>
+        </div>
+    </div>
+
+    <!-- MISSION -->
+    <div class="section">
+        <h2>Our Mission</h2>
+        <p>
+            Our mission is to make learning structured, measurable, and accessible by combining
+            school-style assessments, intelligent progress analysis, and role-based dashboards.
+            We focus on academic clarity, exam readiness, and responsible AI usage for Class 10 students.
+        </p>
+    </div>
+
+    <!-- WHO WE SUPPORT (Target Audience) -->
+    <div class="section">
+        <h2 class="section-title">Who We Support</h2>
+        <p class="section-intro">
+            Day One AI Learning Platform is designed for the complete school ecosystem.
+        </p>
+
+        <div class="cards">
+            <!-- Student Card -->
+            <div class="card detail-card">
+                <h3>For Students</h3>
+                <p>
+                    Students receive structured learning support through curriculum-based assessments,
+                    real-time performance tracking, and guided AI assistance.
+                </p>
+                <ul class="feature-list">
+                    <li>✔ Subject-wise MCQ assessments created by teachers</li>
+                    <li>✔ Scheduled exams with clear time limits</li>
+                    <li>✔ Performance tracking to identify weak areas</li>
+                    <li>✔ Safe AI explanations based only on study material</li>
+                    <li>✔ Focused learning without distractions or hallucinations</li>
+                </ul>
+            </div>
+
+            <!-- Teacher Card -->
+            <div class="card detail-card">
+                <h3>For Teachers</h3>
+                <p>
+                    Teachers can efficiently manage classroom assessments and monitor student progress
+                    using a dedicated teacher portal.
+                </p>
+                <ul class="feature-list">
+                    <li>✔ Create and schedule assessments easily</li>
+                    <li>✔ Auto-generate MCQs from approved question banks</li>
+                    <li>✔ Track class-wise and student-wise performance</li>
+                    <li>✔ Ensure exam-oriented and syllabus-aligned evaluation</li>
+                    <li>✔ Reduce manual effort while maintaining academic control</li>
+                </ul>
+            </div>
+
+            <!-- Parent Card -->
+            <div class="card detail-card">
+                <h3>For Parents</h3>
+                <p>
+                    Parents stay informed about their child’s academic progress through a dedicated
+                    parent view.
+                </p>
+                <ul class="feature-list">
+                    <li>✔ View assessment schedules and results</li>
+                    <li>✔ Monitor subject-wise performance trends</li>
+                    <li>✔ Identify improvement areas early</li>
+                    <li>✔ Stay connected with the learning process</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONNECTION SECTION -->
+    <div class="section">
+        <h2>How the Platform Connects Everyone</h2>
+        <p>
+            The platform creates a unified learning environment where students learn,
+            teachers guide, and parents monitor progress — all within a secure and structured system.
+        </p>
+    </div>
+
+    <!-- SUPPORT & CONTACT -->
+    <div class="section">
+        <h2>Support & Contact</h2>
+        <p>
+            Need help or have questions about the platform?
+        </p>
+        <div class="contact-info">
+            <p>📧 Email: support@dayonelearning.com</p>
+            <p>📞 Phone: +91 XXXXX XXXXX</p>
+            <p>🕘 Support Hours: Monday – Friday, 9:00 AM – 6:00 PM</p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <strong>Day One AI Learning Platform</strong>
+        <p class="footer-note">
+            © 2026 Day One AI Learning Platform. All rights reserved.
+        </p>
+    </footer>
+
+    <script>
+        /* AUTO-SKIP LANDING (OPTION 2) */
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user"));
+
+        if (token && user?.role) {
+            if (user.role === "student") window.location.href = "/index.html";
+            if (user.role === "teacher") window.location.href = "/teacher.html";
+        }
+
+        /* VANTA */
+        VANTA.BIRDS({
+            el: "#vanta-bg",
+            mouseControls: true,
+            touchControls: true,
+            minHeight: 200.0,
+            minWidth: 200.0,
+            scale: 1.0,
+            scaleMobile: 1.0,
+            color1: 0xb794f4,
+            backgroundColor: 0x0b0b12
+        });
+    </script>
+
+</body>
+
+</html>

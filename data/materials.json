@@ -1,0 +1,62 @@
+[
+  {
+    "id": "mat_1768780972808",
+    "class": "Class 10",
+    "subject": "Mathematics",
+    "title": "Mathematics Full Book  ",
+    "filePath": "/uploads/study-materials/class10/mathematics/1768780957881_Class_10_Mathematics_English_Medium-2025_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T00:02:52.808Z"
+  },
+  {
+    "id": "mat_1768782561251",
+    "class": "Class 10",
+    "subject": "Tamil",
+    "title": "Tamil Full Book  ",
+    "filePath": "/uploads/study-materials/class10/tamil/1768782561245_Class_10_Tamil_Tamil_Medium-2025_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T00:29:21.251Z"
+  },
+  {
+    "id": "mat_1768785005793",
+    "class": "Class 10",
+    "subject": "Tamil",
+    "title": "Tamil Full Book  ",
+    "filePath": "/uploads/study-materials/class10/tamil/1768785005790_Class_10_Tamil_Tamil_Medium-2025_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T01:10:05.793Z"
+  },
+  {
+    "id": "mat_1768797799587",
+    "class": "Class 10",
+    "subject": "English",
+    "title": "English Full Book  ",
+    "filePath": "/uploads/study-materials/class10/english/1768797799584_Class_10_English_English_Medium-2024_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T04:43:19.587Z"
+  },
+  {
+    "id": "mat_1768798311156",
+    "class": "Class 10",
+    "subject": "Science",
+    "title": "Science  Full Book  ",
+    "filePath": "/uploads/study-materials/class10/science/1768798311154_Class_10_Science_English_Medium-2024_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T04:51:51.156Z"
+  },
+  {
+    "id": "mat_1768798823452",
+    "class": "Class 10",
+    "subject": "Social Science",
+    "title": "Social Science  Full Book  ",
+    "filePath": "/uploads/study-materials/class10/socialscience/1768798823449_Class_10_Social_Science_English_Medium-2025_Edition-www.tntextbooks.in.pdf",
+    "uploadedBy": "admin_dashboard",
+    "isActive": true,
+    "createdAt": "2026-01-19T05:00:23.452Z"
+  }
+]

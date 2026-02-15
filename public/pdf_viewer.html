@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject PDF Viewer</title>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            /* Indigo */
+            --accent-hover: #4f46e5;
+            --highlight: #fef08a;
+            /* Yellow */
+            --highlight-text: #000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #333;
+            /* Classic PDF viewer neutral background */
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background-color: var(--bg-panel);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .doc-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-page-nav {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-page-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Search Bar */
+        .search-bar {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: var(--bg-panel);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transform: translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 20;
+            width: 300px;
+        }
+
+        .search-bar.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .search-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus {
+            outline: 2px solid var(--accent);
+            border-color: transparent;
+        }
+
+        .search-stats {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Viewer Container */
+        #viewer-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            background: #525659;
+            /* Standard PDF viewer grey */
+        }
+
+        .page-container {
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+            background: white;
+        }
+
+        /* Text Layer (Crucial for Selection & Highlight) */
+        .textLayer {
+            position: absolute;
+            text-align: initial;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            line-height: 1.0;
+            pointer-events: none;
+            /* Allow clicking through to canvas if needed, but usually we want text selection */
+        }
+
+        .textLayer>span {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+            transform-origin: 0% 0%;
+        }
+
+        /* Make text selectable */
+        .page-container:hover .textLayer {
+            pointer-events: auto;
+        }
+
+        /* Highlights */
+        .highlight {
+            background-color: var(--accent);
+            color: transparent;
+            /* Keep text transparent but bg visible */
+            opacity: 0.4;
+            border-radius: 2px;
+            position: absolute;
+            /* Needed if we are overlaying */
+            z-index: 0;
+        }
+
+        /* Simpler highlight within text layer spans */
+        .textLayer .search-hit {
+            background-color: #ffeb3b;
+            color: transparent;
+            mix-blend-mode: multiply;
+            /* Helps it look like a highlighter */
+        }
+
+        /* Loading Spinner */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .doc-title {
+                display: none;
+            }
+
+            .search-bar {
+                left: 10px;
+                right: 10px;
+                width: auto;
+            }
+        }
+
+        /* NEW: Utility Buttons */
+        .btn-text-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .btn-text-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .btn-text-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Summary Panel */
+        .summary-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 380px;
+            max-height: 80vh;
+            background: var(--bg-panel);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            padding: 1.5rem;
+            display: none;
+            overflow-y: auto;
+            z-index: 100;
+            color: var(--text-main);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-panel.active {
+            display: block;
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
+        }
+
+        .summary-close:hover {
+            color: white;
+        }
+
+        .summary-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .summary-content strong {
+            color: #fff;
+            color: var(--highlight);
+        }
+
+        /* Override existing search bar position if needs to coexist */
+        .search-bar {
+            right: 180px;
+            /* Shift left to avoid covering summary button if needed, or rely on z-index */
+            z-index: 90;
+        }
+
+        /* Active Toggle State */
+        #pageOnlyBtn.active {
+            background: #7c5cff;
+            color: white;
+            border: 1px solid #9f8cff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="btn-icon" onclick="window.close()" title="Close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <span class="doc-title" id="doc-title">Document Viewer</span>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn-page-nav" id="prev-page">Prev</button>
+            <span class="page-info">
+                Page <span id="page-num">--</span> of <span id="page-count">--</span>
+            </span>
+            <button class="btn-page-nav" id="next-page">Next</button>
+        </div>
+
+        <div class="toolbar-group">
+            <!-- Search Button (Updated with Label) -->
+            <button class="btn-text-icon" id="toggle-search" title="Search in Document">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                Search
+            </button>
+
+            <!-- Summarize Button (New) -->
+            <button class="btn-text-icon" id="btn-summarize" onclick="toggleSummarize()" title="Generate Full Summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Summary
+            </button>
+
+            <!-- Summarize Page Button (Converted to Toggle) -->
+            <button class="btn-text-icon" id="pageOnlyBtn" onclick="togglePageOnly()" title="Toggle Page Only Mode">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                Page Only
+            </button>
+
+            <!-- Stop Voice Button -->
+            <button class="btn-text-icon" onclick="window.speechSynthesis.cancel()" title="Stop Voice Narration">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+                Stop Voice
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Popup -->
+    <div class="search-bar" id="search-bar">
+        <input type="text" class="search-input" id="search-input" placeholder="Find in document...">
+        <span class="search-stats" id="search-stats">0/0</span>
+        <button class="btn-icon" id="search-prev" title="Previous Match">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 15l-6-6-6 6" />
+            </svg>
+        </button>
+        <button class="btn-icon" id="search-next" title="Next Match">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6" />
+            </svg>
+        </button>
+        <button class="btn-icon" onclick="document.getElementById('search-bar').classList.remove('active')"
+            title="Close Search">✕</button>
+    </div>
+
+    <!-- Summary Panel -->
+    <div id="summary-panel" class="summary-panel">
+        <div class="summary-header">
+            <div class="summary-title">
+                <span>✨ AI Summary</span>
+            </div>
+            <button class="summary-close" onclick="toggleSummarize()">✕</button>
+        </div>
+        <div id="summary-content" class="summary-content">
+            <!-- Content will be injected here -->
+        </div>
+
+    </div>
+
+    <div id="viewer-container">
+        <div class="loader" id="loader">Loading PDF...</div>
+        <div id="pdf-wrapper"></div>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            pdfDoc: null,
+            pageNum: 1,
+            pageRendering: false,
+            pageNumPending: null,
+            scale: 1.5,
+            textContent: [], // Cache text content for search
+            searchResults: [], // { page: 1, text: "..." }
+            currentMatchIndex: 0,
+            searchResults: [], // { page: 1, text: "..." }
+            currentMatchIndex: 0,
+            searchKeyword: ""
+        };
+
+        // Voice State
+        let currentUtterance = null;
+
+        // Mode Flag
+
+        // Mode Flag
+        let isPageOnlyMode = false;
+
+        // Elements
+        const container = document.getElementById('viewer-container');
+        const wrapper = document.getElementById('pdf-wrapper');
+        const pageNumEl = document.getElementById('page-num');
+        const pageCountEl = document.getElementById('page-count');
+        const loader = document.getElementById('loader');
+
+        // Get URL Params
+        const urlParams = new URLSearchParams(window.location.search);
+        const pdfUrl = urlParams.get('file');
+
+        if (!pdfUrl) {
+            alert("No file specified");
+            window.close();
+        }
+
+        // Initialize
+        async function init() {
+            console.log("Initializing PDF Viewer for:", pdfUrl);
+            loader.style.display = 'block';
+
+            try {
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                state.pdfDoc = await loadingTask.promise;
+
+                document.getElementById('doc-title').textContent = urlParams.get('title') || 'Study Material';
+                pageCountEl.textContent = state.pdfDoc.numPages;
+
+                // Render first page
+                renderPage(state.pageNum);
+                loader.style.display = 'none';
+
+                // Pre-process text specific logic if needed? 
+                // We'll lazy load text content during search for performance.
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                loader.textContent = 'Error loading PDF: ' + error.message;
+            }
+        }
+
+        // Render Page
+        async function renderPage(num) {
+            state.pageRendering = true;
+
+            // Fetch Page
+            const page = await state.pdfDoc.getPage(num);
+
+            // Clear previous
+            wrapper.innerHTML = '';
+
+            // Create Page Container
+            const viewport = page.getViewport({ scale: state.scale });
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-container';
+            pageDiv.style.width = `${viewport.width}px`;
+            pageDiv.style.height = `${viewport.height}px`;
+
+            // Canvas
+            const canvas = document.createElement('canvas');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const ctx = canvas.getContext('2d');
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            pageDiv.appendChild(canvas);
+            wrapper.appendChild(pageDiv);
+
+            // Render Canvas
+            await page.render(renderContext).promise;
+
+            // Render Text Layer (for selection & search highlight)
+            const textContent = await page.getTextContent();
+
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'textLayer';
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+            // Align text layer exactly
+            textLayerDiv.style.setProperty('--scale-factor', state.scale);
+
+            pageDiv.appendChild(textLayerDiv);
+
+            // PDF.js 3.x TextLayer rendering
+            // We need to verify if pdfjsLib.renderTextLayer exists or different API in 3.x
+            // Check docs: pdfjsLib.renderTextLayer({ ... })
+
+            try {
+                await pdfjsLib.renderTextLayer({
+                    textContentSource: textContent,
+                    container: textLayerDiv,
+                    viewport: viewport,
+                    textDivs: []
+                }).promise;
+            } catch (e) {
+                console.warn("Text Layer Render Error", e);
+            }
+
+            // Apply Highlights if searching
+            if (state.searchKeyword) {
+                highlightMatchesInLayer(textLayerDiv, state.searchKeyword);
+            }
+
+            state.pageRendering = false;
+            pageNumEl.textContent = num;
+
+            // If pending render
+            if (state.pageNumPending !== null) {
+                renderPage(state.pageNumPending);
+                state.pageNumPending = null;
+            }
+        }
+
+        function queueRenderPage(num) {
+            if (state.pageRendering) {
+                state.pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function onPrevPage() {
+            if (state.pageNum <= 1) return;
+            state.pageNum--;
+            queueRenderPage(state.pageNum);
+        }
+
+        function onNextPage() {
+            if (state.pageNum >= state.pdfDoc.numPages) return;
+            state.pageNum++;
+            queueRenderPage(state.pageNum);
+        }
+
+        // Search Logic
+        const searchInput = document.getElementById('search-input');
+
+        document.getElementById('toggle-search').onclick = () => {
+            document.getElementById('search-bar').classList.toggle('active');
+            searchInput.focus();
+        };
+
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            state.searchKeyword = query;
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 500); // Debounce
+        });
+
+        async function performSearch(query) {
+            state.searchResults = [];
+            state.currentMatchIndex = 0;
+            document.getElementById('search-stats').textContent = `Searching...`;
+
+            if (!query) {
+                document.getElementById('search-stats').textContent = `0/0`;
+                // Re-render to clear highlights
+                renderPage(state.pageNum);
+                return;
+            }
+
+            // Search through all pages
+            // Optimization: For very large PDFs, this might be slow, but for project scale it's fine.
+            let matchCount = 0;
+
+            for (let i = 1; i <= state.pdfDoc.numPages; i++) {
+                const page = await state.pdfDoc.getPage(i);
+                const content = await page.getTextContent();
+
+                // Join strings to check for phrases? Or check individual items.
+                // Simple approach: Check individual items. 
+                // Better: Combine all text, find indices? But we need to map back to text items for highlighting.
+                // "Case-insensitive search"
+                // "Highlight match"
+
+                // To simplify highlighting for this project: 
+                // We just detect IF the page has the text. 
+                // Then in `renderPage`, we highlight any text item containing the string.
+
+                const pageText = content.items.map(item => item.str).join(' ');
+                if (pageText.toLowerCase().includes(query.toLowerCase())) {
+                    state.searchResults.push({ page: i });
+                    matchCount++;
+                    // We count Pages with matches, not total matches for now to simplify Nav.
+                    // Or we can count total occurrences.
+                }
+            }
+
+            const stats = state.searchResults.length;
+            document.getElementById('search-stats').textContent = `${stats > 0 ? 1 : 0}/${stats} pages`;
+
+            if (stats > 0) {
+                // Jump to first match
+                state.currentMatchIndex = 0;
+                jumpToMatch(0);
+            } else {
+                renderPage(state.pageNum); // Clear highlights
+            }
+        }
+
+        function jumpToMatch(index) {
+            if (state.searchResults.length === 0) return;
+
+            // Wrap around
+            if (index < 0) index = state.searchResults.length - 1;
+            if (index >= state.searchResults.length) index = 0;
+
+            state.currentMatchIndex = index;
+            const targetPage = state.searchResults[index].page;
+
+            document.getElementById('search-stats').textContent = `${index + 1}/${state.searchResults.length} pages`;
+
+            if (state.pageNum !== targetPage) {
+                state.pageNum = targetPage;
+                queueRenderPage(state.pageNum);
+            } else {
+                // Re-render to ensure highlights if we are already on the page
+                queueRenderPage(state.pageNum);
+            }
+        }
+
+        // Navigation
+        document.getElementById('prev-page').addEventListener('click', onPrevPage);
+        document.getElementById('next-page').addEventListener('click', onNextPage);
+
+        document.getElementById('search-next').addEventListener('click', () => {
+            jumpToMatch(state.currentMatchIndex + 1);
+        });
+
+        document.getElementById('search-prev').addEventListener('click', () => {
+            jumpToMatch(state.currentMatchIndex - 1);
+        });
+
+        // Highlighter
+        function highlightMatchesInLayer(layerDiv, query) {
+            if (!query) return;
+            const spans = layerDiv.querySelectorAll('span');
+            const regex = new RegExp(`(${query})`, 'gi');
+
+            spans.forEach(span => {
+                if (span.textContent.match(regex)) {
+                    // Highlight logic
+                    // Simple innerHTML replacement
+                    const text = span.textContent;
+                    const newText = text.replace(regex, `<span class="search-hit" style="background-color: yellow; color: transparent;">$1</span>`);
+                    span.innerHTML = newText;
+                }
+            });
+        }
+
+        /* --- VOICE FEATURE --- */
+        /* --- VOICE FEATURE --- */
+        /* --- VOICE FEATURE --- */
+        function getSummaryTextForVoice() {
+            if (typeof window.currentSummary === "string" && window.currentSummary.trim().length > 0) {
+                return window.currentSummary;
+            }
+            return null;
+        }
+
+        function speakSummary() {
+            // Priority: Explicit New Variable -> Legacy Variable -> DOM Fallback
+            let textForVoice = window.__LATEST_SUMMARY_TEXT__;
+
+            if (!textForVoice || typeof textForVoice !== "string") {
+                textForVoice = getSummaryTextForVoice(); // Fallback to legacy
+            }
+
+            if (!textForVoice) {
+                // Fallback to DOM reading if global var missing
+                console.warn("Global summary missing, trying DOM fallback");
+                const panel = document.getElementById("summary-content");
+                const p = panel.querySelector('p');
+                if (p && p.innerText.length > 5) {
+                    readText(p.innerText);
+                } else {
+                    alert("No summary available to read.");
+                }
+                return;
+            }
+
+            console.log("VOICE PAYLOAD:", textForVoice); // DEBUG CHECK
+            readText(textForVoice);
+        }
+
+        function readText(text) {
+            // Stop previous speech
+            if (currentUtterance) {
+                window.speechSynthesis.cancel();
+            }
+
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = "en-US";
+            currentUtterance.rate = 1;
+            currentUtterance.pitch = 1;
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        /* --- SUMMARIZE FEATURE --- */
+
+        function togglePageOnly() {
+            isPageOnlyMode = !isPageOnlyMode;
+            const btn = document.getElementById("pageOnlyBtn");
+            if (isPageOnlyMode) {
+                btn.classList.add("active");
+                btn.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Page Only ✓
+                `;
+            } else {
+                btn.classList.remove("active");
+                btn.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    Page Only
+                `;
+            }
+        }
+
+        async function toggleSummarize() {
+            // Unify Logic: Delegate to specific function based on mode or ID
+            const panel = document.getElementById('summary-panel');
+            const content = document.getElementById('summary-content');
+
+            // If panel already open, close it (toggle behavior)
+            // But if we are triggering a new summary, maybe we want to refresh?
+            // Let's stick to toggle visibility behavior if no active process
+            // For now, if active, just close.
+            if (panel.classList.contains('active')) {
+                panel.classList.remove('active');
+                return;
+            }
+
+            // Open Panel
+            panel.classList.add('active');
+
+            // Trigger Summarization
+            await performSummarization();
+        }
+
+        async function performSummarization() {
+            const content = document.getElementById('summary-content');
+
+            // Set Loading UI
+            content.innerHTML = `
+                <div style="text-align:center; padding: 2rem; color: #94a3b8;">
+                    <div style="margin-bottom:10px;">⚡ Analyzing ${isPageOnlyMode ? 'Page ' + state.pageNum : 'Document'}...</div>
+                    <div style="font-size:0.8rem;">(This uses Google Gemini AI)</div>
+                </div>
+            `;
+
+            try {
+                if (isPageOnlyMode) {
+                    // --- PAGE MODE (Updated with Direct Flask Call) ---
+                    const pageText = await extractCurrentPageText();
+
+                    // 🔹 STEP 5: Input Validation (Exam-Safe)
+                    if (!pageText || pageText.trim().length < 50) {
+                        content.innerHTML = `<div style="color:#64748b; padding:1rem;">ℹ️ Not enough content to summarize on this page.</div>`;
+                        return;
+                    }
+
+                    try {
+                        const token = localStorage.getItem("token");
+                        const response = await fetch("/api/ai/summarize", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ text: pageText })
+                        });
+
+                        // 🔹 STEP 4: Defensive Fallback (Exam-Safe)
+                        if (!response.ok) {
+                            console.warn("AI summarization failed, using fallback");
+                            content.innerHTML = `<div style="color:#64748b; padding:1rem;">ℹ️ Summary is temporarily unavailable. Please try again later.</div>`;
+                            return;
+                        }
+
+                        const data = await response.json();
+
+                        if (!data || !data.summary) {
+                            console.warn("Invalid summarizer response, using fallback");
+                            content.innerHTML = `<div style="color:#64748b; padding:1rem;">ℹ️ Summary is temporarily unavailable. Please try again later.</div>`;
+                            return;
+                        }
+
+                        window.currentSummary = data.summary; // Store for voice
+                        window.__LATEST_SUMMARY_TEXT__ = data.summary; // Explicit storage
+                        content.innerHTML = `
+                            <h4 style="color:var(--highlight); margin-bottom:0.5rem;">Page ${state.pageNum} Summary</h4>
+                            <p style="margin-bottom:1rem;">${data.summary}</p>
+                            ${getVoiceButton(data.summary)}
+                        `;
+
+                    } catch (err) {
+                        console.warn("Summarization error caught:", err);
+                        // Graceful fallback - no red errors, UI remains stable
+                        content.innerHTML = `<div style="color:#64748b; padding:1rem;">ℹ️ Summary is temporarily unavailable. Please try again later.</div>`;
+                        return;
+                    }
+
+                } else {
+                    // --- FULL DOCUMENT MODE (Existing Backend Route) ---
+                    const match = pdfUrl.match(/\/view\/(mat_[0-9a-zA-Z_]+)/);
+                    if (!match) throw new Error("Could not ID document");
+                    const materialId = match[1];
+
+                    const response = await fetch('/api/pdf/summarize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ materialId: materialId })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        window.currentSummary = data.summary; // Store for voice
+                        window.__LATEST_SUMMARY_TEXT__ = data.summary; // Explicit storage
+                        content.innerHTML = `
+                            <h4 style="color:var(--highlight); margin-bottom:0.5rem;">Document Summary</h4>
+                            <p style="margin-bottom:1rem;">${data.summary}</p>
+                            ${getVoiceButton(data.summary)}
+                        `;
+                        content.setAttribute('data-loaded', 'true');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                }
+
+            } catch (err) {
+                // Final safety net - graceful degradation
+                console.warn("Summarization service unavailable:", err);
+                content.innerHTML = `<div style="color:#64748b; padding:1rem;">ℹ️ Summary is temporarily unavailable. Please try again later.</div>`;
+            }
+        }
+
+        function getVoiceButton(text) {
+            return `
+                <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                    <button class="btn-text-icon" style="width:100%; justify-content:center;" onclick="speakSummary()">
+                        🔊 Listen to Summary
+                    </button>
+                </div>
+            `;
+        }
+
+
+        async function extractCurrentPageText() {
+            try {
+                const page = await state.pdfDoc.getPage(state.pageNum);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items
+                    .map(item => item.str)
+                    .join(" ");
+                return pageText;
+            } catch (e) {
+                console.error("Text extraction failed:", e);
+                return null;
+            }
+        }
+
+        async function summarizeCurrentPage() {
+            // Using existing ID 'summary-content' found in HTML
+            const panel = document.getElementById("summary-content");
+            const parentPanel = document.getElementById("summary-panel");
+
+            // Ensure panel is visible
+            if (parentPanel) parentPanel.classList.add('active');
+
+            panel.innerHTML = "⏳ Summarizing this page...";
+
+            try {
+                // Use state.pageNum as the source of truth for current page
+                const pageNum = state.pageNum;
+                const pageText = await extractCurrentPageText();
+
+                if (!pageText || pageText.length < 50) {
+                    panel.innerHTML = "Not enough text on this page to summarize.";
+                    return;
+                }
+
+                // Use the new Page Summary Endpoint
+                const res = await fetch("/api/summarize-page", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        text: pageText,
+                        page: pageNum
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.summary) {
+                    panel.innerHTML = `
+                        <h4 style="color:var(--highlight); margin-bottom:0.5rem;">Page ${pageNum} Summary</h4>
+                        <p>${data.summary}</p>
+                        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                            <button class="btn-text-icon" style="width:100%; justify-content:center;" onclick="playSummaryVoice(this.parentElement.previousElementSibling.innerText)">
+                                🔊 Listen to Summary
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    panel.innerHTML = data.error || "No summary returned.";
+                }
+
+            } catch (err) {
+                console.error(err);
+                panel.innerHTML = "❌ Failed to summarize this page. Backend may be offline.";
+            }
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+
+</html>

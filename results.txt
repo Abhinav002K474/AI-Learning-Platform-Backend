@@ -1,0 +1,8 @@
+Running Final Test Matrix...
+[PASS] Student Login
+[FAIL] Parent Login with Student Creds: Error: Request failed with status code 401
+       Server Response: {"success":false,"message":"Invalid credentials or role mismatch"}
+[PASS] Teacher Login
+[PASS] Parent Login with Teacher Creds (Should Fail): Correctly rejected (401)
+
+Some tests failed.

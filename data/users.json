@@ -1,0 +1,72 @@
+[
+    {
+        "id": "stu_01",
+        "name": "Abinaya",
+        "email": "abi@student.com",
+        "role": "student",
+        "class": "Class 10",
+        "isActive": true,
+        "createdAt": "2024-12-01T10:00:00Z",
+        "password_hash": "$2b$10$ZlBhlcCRirU79W.TlZkT8.27GNK6Qw7LYZF/xEyi4BL6IeqAVS32"
+    },
+    {
+        "id": "stu_02",
+        "name": "Karthik",
+        "email": "karthik@student.com",
+        "role": "student",
+        "class": "Class 9",
+        "isActive": true,
+        "createdAt": "2024-12-05T14:30:00Z",
+        "password_hash": "$2b$10$ZlBhlcCRirU79W.TlZkT8.27GNK6Qw7LYZF/xEyi4BL6IeqAVS32"
+    },
+    {
+        "id": "stu_03",
+        "name": "Priya",
+        "email": "priya@student.com",
+        "role": "student",
+        "class": "Class 10",
+        "isActive": false,
+        "createdAt": "2024-12-10T09:15:00Z",
+        "password_hash": "$2b$10$ZlBhlcCRirU79W.TlZkT8.27GNK6Qw7LYZF/xEyi4BL6IeqAVS32"
+    },
+    {
+        "id": "tea_01",
+        "name": "Mr. Kumar",
+        "email": "kumar@teacher.com",
+        "role": "teacher",
+        "subject": "Mathematics",
+        "isActive": true,
+        "createdAt": "2024-11-20T08:00:00Z",
+        "password_hash": "$2b$10$ZlBhlcCRirU79W.TlZkT8.27GNK6Qw7LYZF/xEyi4BL6IeqAVS32"
+    },
+    {
+        "id": "tea_02",
+        "name": "Ms. Sarah",
+        "email": "sarah@teacher.com",
+        "role": "teacher",
+        "subject": "Science",
+        "isActive": true,
+        "createdAt": "2024-11-25T11:45:00Z",
+        "password_hash": "$2b$10$ZlBhlcCRirU79W.TlZkT8.27GNK6Qw7LYZF/xEyi4BL6IeqAVS32"
+    },
+    {
+        "id": "stu_dummy",
+        "name": "Test Student",
+        "email": "student@test.com",
+        "role": "student",
+        "class": "Class 10",
+        "isActive": true,
+        "createdAt": "2026-01-19T10:00:00Z",
+        "password_hash": "$2b$10$lI3JgA4JvyuFbojXme4z0urq6ydBZKT78b9TNYhcxDZqMTPyTkODy"
+    },
+    {
+        "id": "tea_dummy",
+        "name": "Test Teacher",
+        "email": "teacher@test.com",
+        "role": "teacher",
+        "subject": "General Science",
+        "isActive": true,
+        "createdAt": "2026-01-19T10:00:00Z",
+        "password_hash": "$2b$10$u.jLE1djQ1yGMF57oEZ4q.g6.lME/T80Vgg45tLzPA2.y9vetJQAe"
+    }
+]

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - AI Learning Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin Specific Overrides while reusing styles.css */
+        body {
+            background-color: #0f0f11;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .admin-auth-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            background: #18191c;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .admin-panel-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            background: #18191c;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .admin-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .admin-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+
+        .form-select,
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            background: #27272a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        }
+
+        .file-upload-box {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .file-upload-box:hover {
+            border-color: #a78bfa;
+            background: rgba(167, 139, 250, 0.05);
+        }
+
+        .file-upload-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .status-msg {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: block;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            display: block;
+        }
+
+        .file-label-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-label-text {
+            margin: 0;
+            color: #94a3b8;
+        }
+
+        .file-support-hint {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* User Management Styles */
+        .admin-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .admin-nav-item {
+            padding: 0.5rem 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .admin-nav-item:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .admin-nav-item.active {
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.1);
+            font-weight: 500;
+        }
+
+        .user-table-container {
+            overflow-x: auto;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .user-table th,
+        .user-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-table th {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .status-disabled {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .btn-sm-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-sm-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .sub-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sub-tab-btn {
+            background: #27272a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .sub-tab-btn.active {
+            background: #a78bfa;
+            color: white;
+            border-color: #a78bfa;
+        }
+
+        /* Utility Classes for JS Dynamic Content */
+        .text-center {
+            text-align: center;
+        }
+
+        .p-2rem {
+            padding: 2rem;
+        }
+
+        .text-error {
+            color: #f87171 !important;
+        }
+
+        .text-success {
+            color: #34d399 !important;
+        }
+
+        .text-muted-message {
+            color: #94a3b8;
+        }
+
+        .text-white-500 {
+            color: white;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 1. LOGIN SCREEN (Simulated Admin) -->
+    <div id="admin-login" class="admin-auth-container">
+        <div class="admin-header">
+            <h1 class="admin-title">Admin Access</h1>
+            <p class="text-sm-muted">Restricted Area. Authorized Personnel Only.</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Admin Key</label>
+            <input type="password" id="admin-key" class="form-input" placeholder="Enter secure key...">
+        </div>
+        <button class="btn-primary btn-full-width" onclick="adminApp.login()">Access Dashboard</button>
+        <p id="login-error" class="status-error hidden margin-top-1">Invalid Key</p>
+    </div>
+
+    <!-- 2. DASHBOARD SCREEN -->
+    <div id="admin-dashboard" class="admin-panel-container hidden">
+        <div class="flex-between-center margin-bottom-2">
+            <div>
+                <h1 class="admin-title">Admin Dashboard</h1>
+                <p class="text-sm-muted">Manage resources and users</p>
+            </div>
+            <button class="btn-secondary" onclick="adminApp.logout()">Logout</button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="admin-nav">
+            <div class="admin-nav-item active" id="nav-upload" onclick="adminApp.switchTab('upload')">Upload Materials
+            </div>
+            <div class="admin-nav-item" id="nav-question-bank" onclick="adminApp.switchTab('question-bank')">Upload
+                Question Bank</div>
+            <div class="admin-nav-item" id="nav-users" onclick="adminApp.switchTab('users')">User Management</div>
+        </div>
+
+        <!-- 1. Upload Section -->
+        <div id="section-upload">
+            <form id="upload-form" onsubmit="event.preventDefault(); adminApp.uploadMaterial();">
+                <div class="grid-2-gap-15">
+                    <div class="form-group">
+                        <label class="form-label">Class</label>
+                        <select id="class-select" class="form-select" required>
+                            <option value="" disabled selected>Select Class</option>
+                            <option value="Class 8">Class 8</option>
+                            <option value="Class 9">Class 9</option>
+                            <option value="Class 10">Class 10</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subject</label>
+                        <select id="subject-select" class="form-select" required>
+                            <option value="" disabled selected>Select Subject</option>
+                            <option value="Tamil">Tamil</option>
+                            <option value="English">English</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="Social Science">Social Science</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Material Title</label>
+                    <input type="text" id="material-title" class="form-input"
+                        placeholder="e.g., Pythagoras Theorem Notes" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">PDF Document</label>
+                    <div class="file-upload-box">
+                        <input type="file" id="pdf-file" class="file-upload-input" accept="application/pdf" required
+                            onchange="adminApp.handleFileSelect(this)">
+                        <div id="file-label-content">
+                            <div class="file-label-icon">📄</div>
+                            <p class="file-label-text">Drag & Drop PDF or Click to Browse</p>
+                        </div>
+                    </div>
+                    <p id="selected-file-name" class="text-sm-muted margin-top-05 hidden"></p>
+                </div>
+
+                <button type="submit" id="upload-btn" class="btn-primary btn-full-width">Upload Material</button>
+                <div id="upload-status" class="status-msg hidden"></div>
+            </form>
+        </div>
+
+        <!-- 1b. Question Bank Upload Section (NEW) -->
+        <div id="section-question-bank" class="hidden">
+            <form id="qb-upload-form" onsubmit="event.preventDefault(); adminApp.uploadQuestionBank();">
+                <div class="grid-2-gap-15">
+                    <div class="form-group">
+                        <label class="form-label">Class</label>
+                        <select id="qb-class-select" class="form-select" required>
+                            <option value="" disabled selected>Select Class</option>
+                            <option value="Class 8">Class 8</option>
+                            <option value="Class 9">Class 9</option>
+                            <option value="Class 10">Class 10</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subject</label>
+                        <select id="qb-subject-select" class="form-select" required>
+                            <option value="" disabled selected>Select Subject</option>
+                            <option value="Tamil">Tamil</option>
+                            <option value="English">English</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="Social Science">Social Science</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Question Bank Title</label>
+                    <input type="text" id="qb-title" class="form-input" placeholder="e.g., Annual Exam 2024 Math QB"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Question Bank File</label>
+                    <div class="file-upload-box">
+                        <input type="file" id="qb-file" class="file-upload-input"
+                            accept=".csv,.json,.pdf,.png,.jpg,.jpeg" onchange="adminApp.handleQbFileSelect(this)">
+                        <div id="qb-file-label-content">
+                            <div class="file-label-icon">📄</div>
+                            <p class="file-label-text">Drag & Drop CSV / JSON / PDF / Image or Click to Browse</p>
+                            <p class="text-sm-muted file-support-hint">Supports: .csv, .json, .pdf, .png</p>
+                        </div>
+                    </div>
+                    <p id="selected-file-name" class="text-sm-muted margin-top-05 hidden"></p>
+                </div>
+
+                <div class="text-center text-sm-muted margin-bottom-1">──────────── OR ────────────</div>
+
+                <div class="form-group">
+                    <label class="form-label">Paste Question Bank (JSON)</label>
+                    <textarea id="qb-json-paste" class="form-input" rows="8"
+                        placeholder='Paste JSON content here...'></textarea>
+                </div>
+
+                <button type="submit" id="qb-upload-btn" class="btn-primary btn-full-width">Upload Question
+                    Bank</button>
+                <div id="qb-upload-status" class="status-msg hidden"></div>
+            </form>
+        </div>
+
+        <!-- 2. User Management Section -->
+        <div id="section-users" class="hidden">
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" id="btn-view-students"
+                    onclick="adminApp.loadUsers('students')">Students</button>
+                <button class="sub-tab-btn" id="btn-view-teachers"
+                    onclick="adminApp.loadUsers('teachers')">Teachers</button>
+                <button class="sub-tab-btn" id="btn-view-parents"
+                    onclick="adminApp.loadUsers('parents')">Parents</button>
+            </div>
+
+            <div class="user-table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Info</th> <!-- Class or Subject -->
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-body">
+                        <!-- Injected via JS -->
+                        <tr>
+                            <td colspan="5" class="text-center p-2rem">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="user-status-msg" class="text-sm-muted margin-top-1 text-center hidden"></p>
+        </div>
+    </div>
+
+    <script>
+        const adminApp = {
+            // Simple hardcoded key for prototype security 
+            // In real app, this would be server-side auth
+            SECRET_KEY: "admin123",
+
+            login: function () {
+                const key = document.getElementById('admin-key').value;
+                if (key === this.SECRET_KEY) {
+                    sessionStorage.setItem('admin_auth', 'true');
+                    this.showDashboard();
+                } else {
+                    const err = document.getElementById('login-error');
+                    err.classList.remove('hidden');
+                    err.textContent = "Access Denied: Invalid Admin Key";
+                }
+            },
+
+            logout: function () {
+                sessionStorage.removeItem('admin_auth');
+                location.reload();
+            },
+
+            checkAuth: function () {
+                if (sessionStorage.getItem('admin_auth') === 'true') {
+                    this.showDashboard();
+                }
+            },
+
+            showDashboard: function () {
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+            },
+
+            handleFileSelect: function (input) {
+                const fileName = input.files[0]?.name;
+                const label = document.getElementById('selected-file-name');
+                if (fileName) {
+                    label.textContent = "Selected: " + fileName;
+                    label.classList.remove('hidden');
+                    label.style.color = "#34d399";
+                } else {
+                    label.classList.add('hidden');
+                }
+            },
+
+            uploadMaterial: async function () {
+                const classVal = document.getElementById('class-select').value;
+                const subjectVal = document.getElementById('subject-select').value;
+                const titleVal = document.getElementById('material-title').value;
+                const fileInput = document.getElementById('pdf-file');
+                const file = fileInput.files[0];
+                const btn = document.getElementById('upload-btn');
+                const status = document.getElementById('upload-status');
+
+                if (!file) return;
+
+                // UI Loading State
+                btn.textContent = "Uploading...";
+                btn.disabled = true;
+                status.className = "status-msg"; // Reset
+                status.textContent = "";
+
+                const formData = new FormData();
+                formData.append('class', classVal);
+                formData.append('subject', subjectVal);
+                formData.append('title', titleVal);
+                formData.append('pdfFile', file);
+                formData.append('uploadedBy', 'admin_dashboard');
+
+                try {
+                    const response = await fetch('/api/admin/study-material/upload', {
+                        method: 'POST',
+                        headers: {
+                            'X-User-Role': 'admin' // Auth Header
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    status.classList.remove('hidden');
+                    if (result.success) {
+                        status.classList.add('status-success');
+                        status.textContent = "✅ " + result.message;
+                        // Reset Form
+                        document.getElementById('upload-form').reset();
+                        document.getElementById('selected-file-name').classList.add('hidden');
+                    } else {
+                        throw new Error(result.error || "Upload failed");
+                    }
+
+                } catch (error) {
+                    status.classList.add('status-error');
+                    status.textContent = "❌ Error: " + error.message;
+                } finally {
+                    btn.textContent = "Upload Material";
+                    btn.disabled = false;
+                }
+            },
+
+            // --- QUESTION BANK LOGIC ---
+
+            handleQbFileSelect: function (input) {
+                const fileName = input.files[0]?.name;
+                const label = document.getElementById('qb-selected-file-name');
+                if (fileName) {
+                    label.textContent = "Selected: " + fileName;
+                    label.classList.remove('hidden');
+                    label.style.color = "#34d399";
+                } else {
+                    label.classList.add('hidden');
+                }
+            },
+
+            uploadQuestionBank: async function () {
+                const classVal = document.getElementById('qb-class-select').value;
+                const subjectVal = document.getElementById('qb-subject-select').value;
+                const titleVal = document.getElementById('qb-title').value;
+
+                const fileInput = document.getElementById('qb-file');
+                const file = fileInput.files[0];
+                const jsonPaste = document.getElementById('qb-json-paste').value.trim();
+
+                const btn = document.getElementById('qb-upload-btn');
+                const status = document.getElementById('qb-upload-status');
+
+                if (!file && !jsonPaste) {
+                    status.className = "status-msg status-error";
+                    status.classList.remove('hidden');
+                    status.textContent = "Please select a file OR paste JSON content.";
+                    return;
+                }
+
+                // UI Loading State
+                btn.textContent = "Uploading QB...";
+                btn.disabled = true;
+                status.className = "status-msg";
+                status.textContent = "";
+
+                try {
+                    let response;
+
+                    if (jsonPaste) {
+                        // CASE A: JSON PASTE
+                        response = await fetch('/api/admin/upload-question-bank-json', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-Role': 'admin'
+                            },
+                            body: JSON.stringify({
+                                pastedJson: jsonPaste,
+                                title: titleVal,
+                                subject: subjectVal,
+                                class: classVal
+                            })
+                        });
+                    } else {
+                        // CASE B: FILE UPLOAD
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('class', classVal);
+                        formData.append('subject', subjectVal);
+                        formData.append('title', titleVal);
+
+                        response = await fetch('/api/admin/upload-question-bank-json', {
+                            method: 'POST',
+                            headers: { 'X-User-Role': 'admin' },
+                            body: formData
+                        });
+                    }
+
+                    const result = await response.json();
+
+                    status.classList.remove('hidden');
+                    if (result.success || result.message) {
+                        status.classList.add('status-success');
+                        status.textContent = "✅ " + (result.message || "Success");
+                        document.getElementById('qb-upload-form').reset();
+                        document.getElementById('selected-file-name').classList.add('hidden');
+                    } else {
+                        throw new Error(result.error || "QB Upload failed");
+                    }
+
+                } catch (error) {
+                    status.classList.add('status-error');
+                    status.textContent = "❌ Error: " + error.message;
+                } finally {
+                    btn.textContent = "Upload Question Bank";
+                    btn.disabled = false;
+                }
+            },
+
+            // --- USER MANAGEMENT LOGIC ---
+
+            switchTab: function (tab) {
+                // Update Nav UI
+                document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById(`nav-${tab}`).classList.add('active');
+
+                // Update Sections
+                document.getElementById('section-upload').classList.add('hidden');
+                document.getElementById('section-question-bank').classList.add('hidden');
+                document.getElementById('section-users').classList.add('hidden');
+
+                document.getElementById(`section-${tab}`).classList.remove('hidden');
+
+                if (tab === 'users') {
+                    this.loadUsers('students'); // Default load
+                }
+            },
+
+            loadUsers: async function (type) {
+                // Update Sub-tabs UI
+                document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`btn-view-${type}`).classList.add('active');
+
+                const tbody = document.getElementById('user-list-body');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-2rem">Loading...</td></tr>';
+
+                try {
+                    // Updated to use the unified query endpoint
+                    const response = await fetch(`/api/admin/users?role=${type}`, {
+                        headers: { 'X-User-Role': 'admin' }
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.renderUsers(data.users, type);
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-error">Error: ${data.message}</td></tr>`;
+                    }
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-error">Failed to load users</td></tr>`;
+                }
+            },
+
+            renderUsers: function (users, type) {
+                const tbody = document.getElementById('user-list-body');
+                tbody.innerHTML = '';
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-2rem text-muted-message">No users found.</td></tr>';
+                    return;
+                }
+
+                users.forEach(user => {
+                    let info = '-';
+                    if (type === 'students') info = user.class;
+                    else if (type === 'teachers') info = user.subject;
+                    else if (type === 'parents') info = user.info; // Pre-calculated in backend
+                    const statusClass = user.isActive ? 'status-active' : 'status-disabled';
+                    const statusText = user.isActive ? 'Active' : 'Disabled';
+                    const actionBtnClass = user.isActive ? 'btn-sm-danger' : 'btn-sm-success';
+                    const actionBtnText = user.isActive ? 'Disable' : 'Enable';
+
+                    const row = `
+                        <tr>
+                            <td class="text-white-500">${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${info || '-'}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="${actionBtnClass}" onclick="adminApp.toggleStatus('${user.id}', ${user.isActive}, '${type}')">
+                                    ${actionBtnText}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            },
+
+            toggleStatus: async function (userId, currentStatus, type) {
+                if (!confirm(`Are you sure you want to ${currentStatus ? 'disable' : 'enable'} this user?`)) return;
+
+                try {
+                    const response = await fetch(`/api/admin/users/${userId}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-User-Role': 'admin'
+                        },
+                        body: JSON.stringify({ is_active: !currentStatus })
+                    });
+
+                    const result = await response.json();
+
+                    const item = document.getElementById('user-status-msg');
+                    item.classList.remove('hidden');
+
+                    if (result.success) {
+                        item.textContent = result.message;
+                        item.classList.add('text-success');
+                        item.classList.remove('text-error');
+                        this.loadUsers(type); // Reload list
+                        setTimeout(() => {
+                            item.classList.add('hidden');
+                            item.classList.remove('text-success');
+                        }, 3000);
+                    } else {
+                        item.textContent = "Error: " + result.message;
+                        item.classList.add('text-error');
+                        item.classList.remove('text-success');
+                    }
+
+                } catch (e) {
+                    alert("Status update failed");
+                }
+            }
+        };
+
+        // Init
+        adminApp.checkAuth();
+    </script>
+</body>
+
+</html>

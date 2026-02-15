@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Assessment</title>
+    <link href="styles.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            /* Dark background */
+            color: white;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .exam-container {
+            display: none;
+            /* Initially hidden */
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            background: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        #loading {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #94a3b8;
+        }
+
+        .question-card {
+            background: #334155;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: #475569;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .option-label:hover {
+            background: #64748b;
+        }
+
+        .option-input {
+            margin-right: 0.75rem;
+        }
+
+        .timer-display {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: #dc2626;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: bold;
+        }
+
+        .submit-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loading">Loading assessment...</div>
+
+    <div id="exam-ui" class="exam-container">
+        <div id="timer" class="timer-display">Time Left: --:--</div>
+        <h1 id="exam-title">Assessment</h1>
+        <div id="questions-list"></div>
+        <button class="submit-btn" onclick="submitAssessment()">Submit Assessment</button>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const assessmentId = params.get("id");
+        let timerInterval;
+
+        if (!assessmentId) {
+            document.body.innerHTML = "<h2>Assessment ID not found. Return to dashboard.</h2>";
+            throw new Error("Missing assessment ID");
+        }
+
+        console.log("Assessment ID:", assessmentId);
+
+        let assessmentData = null;
+        let userAnswers = {}; // Map questionId -> option index
+
+        async function loadAssessment() {
+            try {
+                // Use the correct endpoint as identified
+                const res = await fetch(`/api/student/assessment/${assessmentId}/start`);
+                const data = await res.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                if (!data || !data.questions || data.questions.length === 0) {
+                    throw new Error("No questions found");
+                }
+
+                assessmentData = data;
+                renderQuestions(data.questions);
+                document.getElementById('exam-title').textContent = data.title || "Assessment";
+
+                // Start timer with duration in minutes -> converted to seconds
+                // API returns 'duration' (minutes) usually?
+                // Check Step 31: duration_minutes is returned as 'duration'
+                startTimer(data.duration * 60);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('exam-ui').style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').innerHTML = `<h2>Failed to load assessment</h2><p>${err.message}</p>`;
+            }
+        }
+
+        function renderQuestions(questions) {
+            const list = document.getElementById('questions-list');
+            list.innerHTML = questions.map((q, idx) => `
+                <div class="question-card" data-id="${q.id}">
+                    <div class="question-text">${idx + 1}. ${q.question}</div>
+                    <div class="options-grid">
+                        ${q.options.map((opt, optIdx) => `
+                            <label class="option-label">
+                                <input type="radio" 
+                                    name="q_${q.id}" 
+                                    class="option-input" 
+                                    value="${optIdx}"
+                                    onchange="saveAnswer(${q.id}, ${optIdx})">
+                                ${opt}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveAnswer(qId, optIdx) {
+            userAnswers[qId] = optIdx;
+        }
+
+        function startTimer(durationSeconds) {
+            let timeLeft = durationSeconds;
+            const timerEl = document.getElementById('timer');
+
+            updateTimerDisplay(timeLeft);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay(timeLeft);
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Time's up! Submitting assessment...");
+                    submitAssessment();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            document.getElementById('timer').textContent = `Time Left: ${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        async function submitAssessment() {
+            clearInterval(timerInterval);
+
+            // Prepare payload
+            // Backend expects: { assessmentId, studentId, answers: { qId: optionIndex } }
+            // We need studentId. It's usually in localStorage.user.id
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                alert("User session lost. Please login again.");
+                return;
+            }
+            const user = JSON.parse(userStr);
+
+            const payload = {
+                assessmentId: parseInt(assessmentId),
+                studentId: user.id || 0, // Fallback
+                answers: userAnswers
+            };
+
+            try {
+                const res = await fetch('/api/student/assessment/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    document.body.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <h1>Assessment Submitted!</h1>
+                            <p>Your Score: ${result.score} / ${result.total}</p>
+                            <p>Percentage: ${result.percentage.toFixed(1)}%</p>
+                            <button onclick="window.location.href='/index.html'" class="submit-btn" style="width: auto;">Return to Dashboard</button>
+                        </div>
+                    `;
+                } else {
+                    alert("Submission failed: " + (result.error || "Unknown error"));
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error submitting assessment. Check console.");
+            }
+        }
+
+        loadAssessment();
+    </script>
+</body>
+
+</html>
