@@ -137,6 +137,7 @@ router.post("/auth/login", async (req, res) => {
 
         console.log("[LOGIN SUCCESS]", identifier);
 
+        console.log("Signing token with secret source:", process.env.JWT_SECRET ? "ENV" : "FALLBACK");
         // Issue JWT
         const token = jwt.sign(
             { id: user.id, role: user.role },
