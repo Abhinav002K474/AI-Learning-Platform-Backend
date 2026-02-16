@@ -169,7 +169,7 @@ router.post("/auth/login", async (req, res) => {
 
     } catch (err) {
         console.error("LOGIN ERROR:", err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", error: err.message, stack: err.stack });
     }
 });
 
