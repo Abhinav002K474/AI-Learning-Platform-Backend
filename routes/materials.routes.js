@@ -31,6 +31,75 @@ const uploadTemp = multer({
 });
 
 // ------------------------------------------------------------------
+// STUDENT/TEACHER: Upload Study Material (General)
+// POST /api/upload/study-material
+// ------------------------------------------------------------------
+const uploadAny = multer({
+    storage: tempStorage,
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB
+});
+
+router.post('/upload/study-material', (req, res, next) => {
+    uploadAny.single('file')(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
+    try {
+        console.log(`[${new Date().toISOString()}] POST /api/upload/study-material`);
+
+        // Auth check via token header
+        const authHeader = req.headers['authorization'];
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Token required" });
+        }
+
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({ success: false, message: "No file uploaded" });
+        }
+
+        // Save record to JSON DB
+        const dbPath = path.join(__dirname, '../data/materials.json');
+        let materials = [];
+        if (fs.existsSync(dbPath)) {
+            try { materials = JSON.parse(fs.readFileSync(dbPath, 'utf8')); } catch (e) { materials = []; }
+        } else {
+            const dataDir = path.join(__dirname, '../data');
+            if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        const newRecord = {
+            id: `mat_${Date.now()}`,
+            title: req.body.title || file.originalname,
+            subject: req.body.subject || 'General',
+            class: req.body.class || 'All',
+            filePath: `/uploads/temp/${file.filename}`,
+            uploadedBy: req.body.uploadedBy || 'user',
+            isActive: true,
+            createdAt: new Date().toISOString()
+        };
+
+        materials.push(newRecord);
+        fs.writeFileSync(dbPath, JSON.stringify(materials, null, 2));
+
+        console.log("[Upload] ✅ File saved:", newRecord.id, file.originalname);
+
+        res.json({
+            success: true,
+            message: "Study material uploaded successfully",
+            data: newRecord
+        });
+
+    } catch (err) {
+        console.error("[Upload] ❌ Error:", err.message);
+        res.status(500).json({ success: false, message: "Upload failed: " + err.message });
+    }
+});
+
+// ------------------------------------------------------------------
 // ADMIN: Upload Study Material
 // ------------------------------------------------------------------
 router.post('/admin/study-material/upload', (req, res, next) => {
