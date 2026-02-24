@@ -7,8 +7,23 @@ async function generateGeminiReply(prompt) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const result = await model.generateContent(prompt);
         return result.response.text();
-    } catch (err) {
-        console.warn("Gemini 2.5 Flash failed, attempting fallback:", err.message);
+    } catch (error) {
+        console.error("===== GEMINI ERROR START =====");
+        console.error("Error Message:", error.message);
+        console.error("Error Stack:", error.stack);
+
+        if (error.response) {
+            console.error("Gemini Response Status:", error.response.status);
+            console.error("Gemini Response Data:", error.response.data);
+        }
+
+        if (error.error) {
+            console.error("Gemini API Error:", error.error);
+        }
+
+        console.error("===== GEMINI ERROR END =====");
+
+        console.warn("Gemini 2.5 Flash failed, attempting fallback...");
         try {
             // Fallback: Gemini 2.0 Flash (Previous stable version)
             const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
