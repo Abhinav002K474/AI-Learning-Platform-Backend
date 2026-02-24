@@ -49,4 +49,38 @@ router.put("/update-profile", verifyToken, async (req, res) => {
     }
 });
 
+// GET profile endpoint for persistent avatar
+router.get("/profile", verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [rows] = await db.query(
+            "SELECT id, name as fullName, email, role, class, avatar, bio FROM users WHERE id = $1",
+            [userId]
+        );
+
+        if (rows.length === 0) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.json({
+            success: true,
+            user: rows[0]
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Dedicated Avatar Update
+router.put("/avatar", verifyToken, async (req, res) => {
+    try {
+        const { avatar } = req.body;
+        const userId = req.user.id;
+
+        await db.query("UPDATE users SET avatar = $1 WHERE id = $2", [avatar, userId]);
+
+        res.json({ success: true, avatar });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;

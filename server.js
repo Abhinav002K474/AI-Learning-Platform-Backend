@@ -8,6 +8,10 @@ const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+console.log(
+    "Gemini Key Loaded:",
+    process.env.GEMINI_API_KEY ? "YES" : "NO"
+);
 const { generateGeminiReply } = require('./services/gemini.service');
 const { summarizeText } = require('./services/summarizer.client');
 const { buildIndex } = require("./services/studyMaterialIndex.service");
