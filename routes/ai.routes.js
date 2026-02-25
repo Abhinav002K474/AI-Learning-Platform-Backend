@@ -4,6 +4,7 @@ const { generateGeminiReply } = require("../services/gemini.service");
 
 // ✅ POST /api/ai/generate-questions
 router.post("/generate-questions", async (req, res) => {
+    console.log("AI route triggered");
     try {
         const { text } = req.body;
 
@@ -19,7 +20,9 @@ Topic/Content: ${text}`;
 
         let questions;
         try {
+            console.log("Calling Gemini service...");
             questions = await generateGeminiReply(prompt);
+            console.log("Gemini response received");
         } catch (aiErr) {
             console.warn("[AI Generate Questions] Gemini unavailable, using fallback");
             questions = `1. What is ${text}?\n2. Explain the key concepts of ${text}.\n3. What are the main components of ${text}?\n4. How does ${text} work in practice?\n5. What are the real-world applications of ${text}?`;
